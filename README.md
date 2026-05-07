@@ -197,6 +197,17 @@ POST /chat
 3. **Notes Summarizer** → Paste any paragraph of text → Click Summarize Notes
 
 ---
+## 📸 Output
+
+![Output 1](output/ui.png)
+
+![Output 2](output/chat.png)
+
+![Output 3](output/mcq.png)
+
+![Output 4](output/summary.png)
+
+---
 
 ## 🐛 Common Issues
 
