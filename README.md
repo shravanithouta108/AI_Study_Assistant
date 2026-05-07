@@ -199,13 +199,13 @@ POST /chat
 ---
 ## 📸 Output
 
-![Output 1](output/ui.png)
+![Output 1](images/ui.png)
 
-![Output 2](output/chat.png)
+![Output 2](images/chat.png)
 
-![Output 3](output/mcq.png)
+![Output 3](images/mcq.png)
 
-![Output 4](output/summary.png)
+![Output 4](images/summary.png)
 
 ---
 
