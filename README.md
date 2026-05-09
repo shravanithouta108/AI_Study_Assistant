@@ -208,7 +208,10 @@ POST /chat
 ![Output 4](images/summary.png)
 
 ---
+## 📂Additional Resources
 
+The Lean Canvas and Project Presentation are combined into one PPT file and have been pushed to this repository for viewing and reference.
+---
 ## 🐛 Common Issues
 
 | Problem | Fix |
