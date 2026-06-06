@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 const API_BASE ="http://localhost:8000";
 
@@ -105,15 +106,18 @@ export default function Chat() {
                 {msg.role === "user" ? "YOU" : "AI TUTOR"}
               </span>
             </div>
-            <div className="answer-text">{msg.content}</div>
+            <div className="answer-text">
+              <ReactMarkdown>{msg.content}</ReactMarkdown>
+            </div>
 
             {msg.role === "assistant" && (
               <>
                 {msg.simplified && (
                   <div className="simplified-box">
                     <div className="simplified-label">✦ SIMPLIFIED VERSION</div>
-                    <div className="answer-text">{msg.simplified}</div>
-                  </div>
+                  <div className="answer-text">
+                    <ReactMarkdown>{msg.simplified}</ReactMarkdown>
+                  </div>                  </div>
                 )}
                 <div className="simplify-row">
                   <button

@@ -223,13 +223,18 @@ The Lean Canvas and Project Presentation are combined into one PPT file and have
 | Port 3000 already in use | Press Y when asked to use another port |
 
 ---
+## 👀Live Demo
 
+The AI Study Assistant is deployed and accessible online:
+
+**Website:** https://shravanis-ai-study-assistant.vercel.app/
+
+---
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
 
 ---
-
 ## 🙋‍♀️ Author
 
 Made with ❤️ by **Shravani Thouta**

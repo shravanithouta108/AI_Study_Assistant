@@ -3,25 +3,23 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f1117;
-  --surface: #181c27;
-  --surface2: #1e2335;
+  --bg: #0D1B2A;
+  --surface: #1B263B;
+  --surface2: #415A77;
   --border: rgba(255,255,255,0.08);
   --border2: rgba(255,255,255,0.14);
-  --amber: #f0a429;
-  --amber-dim: rgba(240,164,41,0.12);
-  --amber-glow: rgba(240,164,41,0.22);
-  --teal: #2dd4bf;
-  --teal-dim: rgba(45,212,191,0.1);
-  --rose: #f87171;
-  --rose-dim: rgba(248,113,113,0.1);
-  --green: #4ade80;
-  --green-dim: rgba(74,222,128,0.1);
-  --text: #e8e6df;
-  --text2: #9a9896;
-  --text3: #6b6965;
+  --amber: #00D9FF;
+  --amber-dim: rgba(0, 217, 255, 0.12);
+  --amber-glow: rgba(0, 217, 255, 0.22);
+  --teal: #00B4D8;
+  --teal-dim: rgba(0, 180, 216, 0.1);
+  --rose: #E76F51;
+  --green: #2A9D8F;
+  --text: #E0FBFC;
+  --text2: #90CAF9;
+  --text3: #64B5F6;
   --radius: 12px;
-  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-display: 'Georgia', serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'DM Mono', monospace;
 }
