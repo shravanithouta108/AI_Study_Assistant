@@ -1,25 +1,38 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from groq import Groq
 from dotenv import load_dotenv
 import os, json
+import requests
+
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 MODEL = "llama-3.1-8b-instant"
-def ask_openai(system, user, max_tokens=800):
-    response = client.chat.completions.create(
-        model=MODEL,
-        max_tokens=max_tokens,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user}
-        ]
+
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+def ask_ai(system, user, max_tokens=800):
+    response = requests.post(
+        GROQ_URL,
+        headers={
+            "Authorization": f"Bearer {os.environ.get('GROQ_API_KEY')}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": MODEL,
+            "max_tokens": max_tokens,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        },
+        timeout=60,
     )
-    return response.choices[0].message.content
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]
+
 @app.get("/")
 def root():
     return jsonify({"status": "ok", "message": "AI Study Assistant API is running"})

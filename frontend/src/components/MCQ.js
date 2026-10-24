@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const API_BASE ="http://localhost:8000";
+const API_BASE = "https://ai-study-assistant-backend.onrender.com";
 
 export default function MCQ() {
   const [topic, setTopic] = useState("");
