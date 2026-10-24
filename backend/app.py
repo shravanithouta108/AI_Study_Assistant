@@ -1,17 +1,17 @@
+import os
+import json
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-import os, json
-import requests
-
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
 MODEL = "llama-3.1-8b-instant"
-
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
 
 def ask_ai(system, user, max_tokens=800):
     response = requests.post(
@@ -33,71 +33,77 @@ def ask_ai(system, user, max_tokens=800):
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
 
-@app.get("/")
+
+@app.route("/", methods=["GET"])
 def root():
     return jsonify({"status": "ok", "message": "AI Study Assistant API is running"})
 
-@app.post("/chat")
+
+@app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    question = (data or {}).get("question", "").strip()
+    data = request.get_json() or {}
+    question = data.get("question", "").strip()
     if not question:
         return jsonify({"error": "Question cannot be empty"}), 400
-    system = """You are a helpful AI tutor for students. Answer in this EXACT format:
+    try:
+        system = """You are a helpful AI tutor. Answer in this EXACT format:
+**Direct Answer:** [1-2 sentence answer]
+**Explanation:** [2-4 sentences]"""
+        return jsonify({"answer": ask_ai(system, question, 600)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-**Direct Answer:**
-[1-2 sentence direct answer]
 
-**Explanation:**
-[2-4 sentences with clear explanation]
-
-Keep responses concise and student-friendly."""
-    answer = ask_openai(system, question, 600)
-    return jsonify({"answer": answer})
-
-@app.post("/simplify")
+@app.route("/simplify", methods=["POST"])
 def simplify():
-    data = request.get_json()
-    text = (data or {}).get("text", "").strip()
+    data = request.get_json() or {}
+    text = data.get("text", "").strip()
     if not text:
         return jsonify({"error": "Text cannot be empty"}), 400
-    system = "Rewrite the given answer for a 12-year-old using simple words, short sentences, friendly tone. Under 100 words."
-    result = ask_openai(system, f"Simplify this:\n\n{text}", 300)
-    return jsonify({"simplified": result})
+    try:
+        result = ask_ai(
+            "Rewrite for a 12-year-old. Simple words, short sentences. Under 100 words.",
+            f"Simplify:\n\n{text}",
+            300,
+        )
+        return jsonify({"simplified": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.post("/generate-mcq")
+
+@app.route("/generate-mcq", methods=["POST"])
 def generate_mcq():
-    data = request.get_json()
-    topic = (data or {}).get("topic", "").strip()
+    data = request.get_json() or {}
+    topic = data.get("topic", "").strip()
     if not topic:
         return jsonify({"error": "Topic cannot be empty"}), 400
-    system = """Generate EXACTLY 5 MCQ questions. Return ONLY valid JSON, no extra text, no markdown.
-Format: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","explanation":"..."}]
-Rules: topic-specific questions, correct_answer must be A/B/C/D only, clear explanations."""
-    raw = ask_openai(system, f"Generate 5 MCQs about: {topic}", 1500)
     try:
-        clean = raw.strip().replace("```json","").replace("```","")
-        questions = json.loads(clean[clean.find('['):clean.rfind(']')+1])
+        system = """Generate EXACTLY 5 MCQs. Return ONLY valid JSON, no markdown.
+Format: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","explanation":"..."}]"""
+        raw = ask_ai(system, f"Generate 5 MCQs about: {topic}", 1500)
+        clean = raw.strip().replace("```json", "").replace("```", "")
+        questions = json.loads(clean[clean.find("["):clean.rfind("]") + 1])
         return jsonify({"questions": questions[:5]})
-    except:
-        return jsonify({"error": "Failed to parse MCQs, please try again"}), 422
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@app.post("/summarize")
+
+@app.route("/summarize", methods=["POST"])
 def summarize():
-    data = request.get_json()
-    text = (data or {}).get("text", "").strip()
+    data = request.get_json() or {}
+    text = data.get("text", "").strip()
     if not text or len(text) < 30:
         return jsonify({"error": "Please provide more text"}), 400
-    system = """Summarize notes. Return ONLY valid JSON, no extra text, no markdown.
-Format: {"summary":["point1","point2","point3","point4"],"key_takeaways":["t1","t2","t3"]}
-Short bullet points only, no paragraphs."""
-    raw = ask_openai(system, f"Summarize:\n\n{text}", 800)
     try:
-        clean = raw.strip().replace("```json","").replace("```","")
-        result = json.loads(clean[clean.find('{'):clean.rfind('}')+1])
+        system = """Summarize notes. Return ONLY valid JSON, no markdown.
+Format: {"summary":["point1","point2","point3","point4"],"key_takeaways":["t1","t2","t3"]}"""
+        raw = ask_ai(system, f"Summarize:\n\n{text}", 800)
+        clean = raw.strip().replace("```json", "").replace("```", "")
+        result = json.loads(clean[clean.find("{"):clean.rfind("}") + 1])
         return jsonify(result)
-    except:
-        return jsonify({"error": "Failed to parse summary, please try again"}), 422
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
-    app.run(port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
