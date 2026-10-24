@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-MODEL = "llama-3.1-8b-instant"
+MODEL = "openai/gpt-oss-20b"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
