@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 
-const API_BASE = "https://ai-study-assistant-backend-ekna.onrender.com/";
+const API_BASE = "https://ai-study-assistant-backend-ekna.onrender.com";
 
 function LoadingDots() {
   return (

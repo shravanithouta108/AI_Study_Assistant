@@ -80,7 +80,7 @@ def generate_mcq():
     try:
         system = """Generate EXACTLY 5 MCQs. Return ONLY valid JSON, no markdown.
 Format: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","explanation":"..."}]"""
-        raw = ask_ai(system, f"Generate 5 MCQs about: {topic}", 1500)
+        raw = ask_ai(system, f"Generate 5 MCQs about: {topic}", 4000)
         clean = raw.strip().replace("```json", "").replace("```", "")
         questions = json.loads(clean[clean.find("["):clean.rfind("]") + 1])
         return jsonify({"questions": questions[:5]})
@@ -97,7 +97,7 @@ def summarize():
     try:
         system = """Summarize notes. Return ONLY valid JSON, no markdown.
 Format: {"summary":["point1","point2","point3","point4"],"key_takeaways":["t1","t2","t3"]}"""
-        raw = ask_ai(system, f"Summarize:\n\n{text}", 800)
+        raw = ask_ai(system, f"Summarize:\n\n{text}", 4000)
         clean = raw.strip().replace("```json", "").replace("```", "")
         result = json.loads(clean[clean.find("{"):clean.rfind("}") + 1])
         return jsonify(result)
