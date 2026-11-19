@@ -1,16 +1,26 @@
 import React, { useState } from "react";
 
 const API_BASE = "https://ai-study-assistant-backend-ekna.onrender.com";
-const TOTAL_QUESTIONS = 100;   // total questions to generate
-const BATCH_SIZE = 10;         // questions per request (backend limit is 10)
+const TOTAL_QUESTIONS = 100;
+const FOCUS_AREAS = [
+  "key concepts", "definitions", "processes", "examples",
+  "causes and effects", "important facts", "comparisons",
+  "applications", "history", "key terms",
+];
+const MAX_CALLS = 60;    // total requests allowed, including retries
+const MAX_RETRIES = 5;   // retries allowed after a 429 (rate limit) error
+const PAUSE_MS = 4000;   // pause between requests
+const RETRY_MS = 15000;  // wait after a 429 before retrying
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function MCQ() {
   const [topic, setTopic] = useState("");
   const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});   // idx -> selected letter
-  const [correct, setCorrect] = useState({});   // idx -> boolean
+  const [answers, setAnswers] = useState({});
+  const [correct, setCorrect] = useState({});
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(""); // e.g. "Generating 30 of 100..."
+  const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
 
   const generateMCQ = async () => {
@@ -21,41 +31,54 @@ export default function MCQ() {
     setAnswers({});
     setCorrect({});
 
-    let all = [];
-    try {
-      for (let batch = 0; batch < TOTAL_QUESTIONS / BATCH_SIZE; batch++) {
-        setProgress(`Generating ${all.length} of ${TOTAL_QUESTIONS}...`);
+    const all = [];
+    const seen = new Set();
+    let lastError = "";
+    let retries = 0;
 
+    for (let call = 0; call < MAX_CALLS && all.length < TOTAL_QUESTIONS; call++) {
+      if (call > 0) await sleep(PAUSE_MS);
+      setProgress(`Generating ${all.length} of ${TOTAL_QUESTIONS}...`);
+
+      const focus = FOCUS_AREAS[call % FOCUS_AREAS.length];
+      const subtopic = `${topic.trim()} - ${focus}, set ${Math.floor(call / FOCUS_AREAS.length) + 1}`;
+
+      try {
         const res = await fetch(`${API_BASE}/generate-mcq`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            topic: topic.trim(),
-            count: BATCH_SIZE,
-            avoid: all.map((q) => q.question), // prevents repeated questions
-          }),
+          body: JSON.stringify({ topic: subtopic }),
         });
-
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data.error || `Server error ${res.status}`);
+        if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+
+        for (const q of data.questions || []) {
+          const key = (q.question || "").trim().toLowerCase();
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          all.push(q);
+          if (all.length === TOTAL_QUESTIONS) break;
         }
-        if (!data.questions || data.questions.length === 0) {
-          throw new Error("No questions returned. Please try again.");
+      } catch (e) {
+        if (e.message.includes("429") && retries < MAX_RETRIES) {
+          retries++;
+          await sleep(RETRY_MS);
+          call--; // redo the same batch
+          continue;
         }
-        all = [...all, ...data.questions];
+        lastError = e.message;
       }
-    } catch (e) {
-      setError(
-        all.length > 0
-          ? `Stopped after ${all.length} questions: ${e.message}`
-          : e.message || "Failed to generate MCQs. Please try again."
-      );
-    } finally {
-      setQuestions(all);
-      setLoading(false);
-      setProgress("");
     }
+
+    if (all.length < TOTAL_QUESTIONS) {
+      setError(
+        `Only ${all.length} unique questions could be generated.` +
+          (lastError ? ` Last error: ${lastError}` : "")
+      );
+    }
+    setQuestions(all);
+    setLoading(false);
+    setProgress("");
   };
 
   const selectOption = (qIdx, letter) => {
