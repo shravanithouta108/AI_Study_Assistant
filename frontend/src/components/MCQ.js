@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 
 const API_BASE = "https://ai-study-assistant-backend-ekna.onrender.com";
+const TOTAL_QUESTIONS = 100;   // total questions to generate
+const BATCH_SIZE = 10;         // questions per request (backend limit is 10)
 
 export default function MCQ() {
   const [topic, setTopic] = useState("");
@@ -8,6 +10,7 @@ export default function MCQ() {
   const [answers, setAnswers] = useState({});   // idx -> selected letter
   const [correct, setCorrect] = useState({});   // idx -> boolean
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(""); // e.g. "Generating 30 of 100..."
   const [error, setError] = useState("");
 
   const generateMCQ = async () => {
@@ -18,25 +21,40 @@ export default function MCQ() {
     setAnswers({});
     setCorrect({});
 
+    let all = [];
     try {
-      const res = await fetch(`${API_BASE}/generate-mcq`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic.trim() }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `Server error ${res.status}`);
+      for (let batch = 0; batch < TOTAL_QUESTIONS / BATCH_SIZE; batch++) {
+        setProgress(`Generating ${all.length} of ${TOTAL_QUESTIONS}...`);
+
+        const res = await fetch(`${API_BASE}/generate-mcq`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            count: BATCH_SIZE,
+            avoid: all.map((q) => q.question), // prevents repeated questions
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || `Server error ${res.status}`);
+        }
+        if (!data.questions || data.questions.length === 0) {
+          throw new Error("No questions returned. Please try again.");
+        }
+        all = [...all, ...data.questions];
       }
-      const data = await res.json();
-      if (!data.questions || data.questions.length === 0) {
-        throw new Error("No questions returned. Please try again.");
-      }
-      setQuestions(data.questions);
     } catch (e) {
-      setError(e.message || "Failed to generate MCQs. Please try again.");
+      setError(
+        all.length > 0
+          ? `Stopped after ${all.length} questions: ${e.message}`
+          : e.message || "Failed to generate MCQs. Please try again."
+      );
     } finally {
+      setQuestions(all);
       setLoading(false);
+      setProgress("");
     }
   };
 
@@ -67,7 +85,7 @@ export default function MCQ() {
           onClick={generateMCQ}
           disabled={loading || !topic.trim()}
         >
-          {loading ? "Generating..." : "Generate MCQs"}
+          {loading ? "Generating..." : `Generate ${TOTAL_QUESTIONS} MCQs`}
         </button>
       </div>
 
@@ -75,7 +93,7 @@ export default function MCQ() {
 
       {loading && (
         <div className="loading-card">
-          Generating 5 questions on <strong>{topic}</strong>...{" "}
+          {progress}{" "}
           <span className="loading-dots">
             <span /><span /><span />
           </span>
@@ -84,7 +102,7 @@ export default function MCQ() {
 
       {questions.length > 0 && (
         <>
-          {totalAnswered === questions.length && (
+          {!loading && totalAnswered === questions.length && (
             <div className="score-banner">
               <div className="score-num">{totalCorrect}/{questions.length}</div>
               <div className="score-label">Questions correct</div>

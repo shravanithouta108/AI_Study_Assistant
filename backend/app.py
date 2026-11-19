@@ -75,18 +75,19 @@ def simplify():
 def generate_mcq():
     data = request.get_json() or {}
     topic = data.get("topic", "").strip()
+    count = min(int(data.get("count", 5)), 10)   # max 10 per request
+    avoid = data.get("avoid", [])[-50:]           # questions already made, to prevent repeats
     if not topic:
         return jsonify({"error": "Topic cannot be empty"}), 400
     try:
-        system = """Generate EXACTLY 5 MCQs. Return ONLY valid JSON, no markdown.
-Format: [{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","explanation":"..."}]"""
-        raw = ask_ai(system, f"Generate 5 MCQs about: {topic}", 4000)
-        clean = raw.strip().replace("```json", "").replace("```", "")
-        questions = json.loads(clean[clean.find("["):clean.rfind("]") + 1])
-        return jsonify({"questions": questions[:5]})
+        system = f"""Generate EXACTLY {count} MCQs. Return ONLY valid JSON, no markdown.
+Format: [{{"question":"...","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","explanation":"..."}}]
+Do not repeat any of these questions: {json.dumps(avoid)}"""
+        raw = ask_ai(system, f"Generate {count} MCQs about: {topic}", 4000)
+        questions = extract_json(raw, "[", "]")
+        return jsonify({"questions": questions[:count]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/summarize", methods=["POST"])
 def summarize():
