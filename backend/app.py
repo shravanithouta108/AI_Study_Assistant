@@ -12,6 +12,12 @@ CORS(app)
 MODEL = "openai/gpt-oss-20b"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+def extract_json(raw, open_char, close_char):
+    start = raw.find(open_char)
+    end = raw.rfind(close_char)
+    if start == -1 or end == -1:
+        raise ValueError("The AI response was not in the expected format. Please try again.")
+    return json.loads(raw[start:end + 1])
 
 def ask_ai(system, user, max_tokens=800):
     response = requests.post(
